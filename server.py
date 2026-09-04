@@ -104,9 +104,10 @@ def live_volume(symbol):
     if not candles or candles.get('s') != 'ok' or not candles.get('v'):
         return None
     volumes = [float(value) for value in candles['v'][-11:]]
+    closes = [float(value) for value in candles.get('c', [])[-12:]]
     current = volumes[-1]
     average = sum(volumes[:-1]) / max(1, len(volumes) - 1)
-    return {'volume': current, 'volumeMultiple': round(current / average, 1) if average else 1.0}
+    return {'volume': current, 'averageVolume': average, 'volumeMultiple': round(current / average, 1) if average else 1.0, 'spark': closes or None}
 
 
 def live_news(symbol):
@@ -154,6 +155,8 @@ def quote(symbol):
     volume_data = live_volume(symbol) if source == 'finnhub' else None
     volume_multiple = volume_data['volumeMultiple'] if volume_data else round(1 + abs(move) * 20, 1)
     raw_volume = volume_data['volume'] if volume_data else 2.1 + (abs(move) * 1000) % 6.8
+    average_volume = volume_data['averageVolume'] if volume_data else raw_volume / volume_multiple
+    chart_values = volume_data.get('spark') if volume_data else None
     volume_label = f'{raw_volume / 1000000:.1f}M' if raw_volume >= 1000000 else f'{raw_volume / 1000:.1f}K'
     headline = live_news(symbol) if source == 'finnhub' else None
     price_factor = min(40, round(abs(pct) * 12))
@@ -170,8 +173,9 @@ def quote(symbol):
     priority = 'needs-attention' if score >= 61 else 'worth-checking' if score >= 31 else 'normal'
     return {'symbol': symbol, 'name': name, 'sector': sector, 'price': price,
             'pct': pct, 'previousClose': previous_close,
-            'volume': volume_label, 'volumeMultiple': volume_multiple,
-            'beta': beta, 'alert': alert, 'tone': tone, 'spark': spark,
+            'volume': volume_label, 'volumeValue': raw_volume, 'volumeMultiple': volume_multiple,
+            'averageVolume': average_volume, 'headline': headline,
+            'beta': beta, 'alert': alert, 'tone': tone, 'spark': chart_values or spark,
             'source': source,
             'attentionScore': score, 'priority': priority, 'factors': {
                 'price': price_factor, 'volume': volume_factor,
@@ -184,9 +188,12 @@ def dashboard():
     quotes = []
     for item in data['symbols']:
         current = quote(item['symbol'])
-        current.update(note=item.get('note', ''), addedAt=item.get('addedAt'), previousSnapshot=data['lastSnapshot'].get(item['symbol']))
+        previous = data['lastSnapshot'].get(item['symbol'])
+        current.update(note=item.get('note', ''), addedAt=item.get('addedAt'), previousSnapshot=previous)
+        current['previousPrice'] = previous.get('price') if previous else None
+        current['sinceLastCheckPct'] = round((current['price'] - previous['price']) / previous['price'] * 100, 2) if previous and previous.get('price') else None
         quotes.append(current)
-    meaningful = [q['symbol'] for q in quotes if q['priority'] != 'normal' or not q['previousSnapshot']]
+    meaningful = [q['symbol'] for q in quotes if not q['previousSnapshot'] or q['priority'] != 'normal' or abs(q['sinceLastCheckPct'] or 0) >= 1.5]
     ranked = sorted(quotes, key=lambda item: item['attentionScore'], reverse=True)
     attention_queue = [{'symbol': q['symbol'], 'score': q['attentionScore'], 'priority': q['priority']} for q in ranked]
     needs_attention = [q for q in ranked if q['priority'] == 'needs-attention']
@@ -195,12 +202,14 @@ def dashboard():
              f"{story_subject['name']} is your biggest watchlist signal, moving "
              f"{'up' if story_subject['pct'] >= 0 else 'down'} {abs(story_subject['pct']):.2f}% "
              f"with a {story_subject['volumeMultiple']:.1f}x typical-volume reading.")
+    live_count = sum(q['source'] == 'finnhub' for q in quotes)
+    feed_status = 'live' if live_count == len(quotes) and live_count else 'degraded' if live_count else 'simulated'
+    warnings = [] if feed_status == 'live' else ['Some symbols could not be refreshed and are using fallback data.'] if feed_status == 'degraded' else ['Live data is unavailable. Showing local simulation.']
     return {'quotes': quotes, 'meaningful': meaningful, 'lastCheck': data['lastCheck'],
         'attentionQueue': attention_queue, 'marketStory': story,
         'market': live_market_overview(quotes) or {'sp': .42, 'nasdaq': .88, 'vix': 14.8, 'breadth': 63},
-        'feed': {'status': 'live' if FINNHUB_API_KEY and any(q['source'] == 'finnhub' for q in quotes) else 'simulated',
-             'delayMinutes': 0 if FINNHUB_API_KEY and any(q['source'] == 'finnhub' for q in quotes) else None,
-             'asOf': now(), 'sources': ['Finnhub market feed' if FINNHUB_API_KEY else 'Local simulation', 'Event calendar']}}
+           'feed': {'status': feed_status, 'delayMinutes': 0 if feed_status == 'live' else None,
+               'asOf': now(), 'sources': ['Finnhub market feed' if live_count else 'Local simulation', 'Event calendar'], 'warnings': warnings}}
 
 
 class Handler(BaseHTTPRequestHandler):

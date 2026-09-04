@@ -20,7 +20,9 @@ function escapeHtml(value) {
 function sparkline(values, down) {
   const min = Math.min(...values), max = Math.max(...values);
   const points = values.map((value, index) => `${(index / (values.length - 1)) * 100},${34 - ((value - min) / (max - min || 1)) * 29}`).join(' ');
-  return `<svg class="spark ${down ? 'down' : ''}" viewBox="0 0 100 38" preserveAspectRatio="none" aria-hidden="true"><polyline points="${points}"/></svg>`;
+  const last = values[values.length - 1];
+  const lastY = 34 - ((last - min) / (max - min || 1)) * 29;
+  return `<svg class="spark ${down ? 'down' : ''}" viewBox="0 0 100 38" preserveAspectRatio="none" aria-hidden="true"><polyline points="${points}"/><circle cx="100" cy="${lastY}" r="2.7"/></svg>`;
 }
 function render() {
   const visibleQuotes = dashboard.quotes.filter(q => {
@@ -31,7 +33,7 @@ function render() {
   const quotes = dashboard.quotes;
   $('#count').textContent = quotes.length;
   $('#lastChecked').textContent = formatTime(dashboard.lastCheck);
-  $('#updated').textContent = 'just now';
+  $('#updated').textContent = dashboard.lastCheck ? formatTime(dashboard.lastCheck).replace('Last checked ', '') : 'not reviewed yet';
   $('#updated').title = `Feed timestamp: ${new Date(dashboard.feed.asOf).toLocaleTimeString()}`;
   $('#sp').textContent = `+${dashboard.market.sp.toFixed(2)}%`;
   $('#nasdaq').textContent = `+${dashboard.market.nasdaq.toFixed(2)}%`;
@@ -43,9 +45,10 @@ function render() {
   $('#marketStory').textContent = dashboard.marketStory;
   $('#dataAsOf').textContent = `As of ${new Date(dashboard.feed.asOf).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })} · ${dashboard.feed.sources.join(' + ')}`;
     const isLive = dashboard.feed.status === 'live';
-    $('#dataStatus').textContent = isLive ? 'Live market data' : 'Simulated market data';
-    $('#qualityDot').className = `quality-dot ${isLive ? 'is-live' : 'is-simulated'}`;
-    $('#dataInfo').title = isLive ? 'Quotes are fetched from Finnhub.' : 'Add FINNHUB_API_KEY on the server to enable live quotes.';
+    const isDegraded = dashboard.feed.status === 'degraded';
+    $('#dataStatus').textContent = isLive ? 'Live market data' : isDegraded ? 'Partially refreshed' : 'Simulated market data';
+    $('#qualityDot').className = `quality-dot ${isLive ? 'is-live' : isDegraded ? 'is-degraded' : 'is-simulated'}`;
+    $('#dataInfo').title = dashboard.feed.warnings?.join(' ') || (isLive ? 'Quotes are fetched from Finnhub.' : 'Add FINNHUB_API_KEY on the server to enable live quotes.');
   $('#queueCount').textContent = dashboard.attentionQueue.length;
   $('#attentionQueue').innerHTML = dashboard.attentionQueue.slice(0, 5).map((item, index) => {
     const quote = quotes.find(q => q.symbol === item.symbol);
@@ -66,11 +69,22 @@ function render() {
 }
 function openDetails(symbol) {
   const q = dashboard.quotes.find(item => item.symbol === symbol); if (!q) return;
-  $('#detailTitle').textContent = `${q.symbol} · ${q.name}`; $('#detailScore').textContent = q.attentionScore;
+  $('#detailTitle').textContent = `${q.symbol} - ${q.name}`; $('#detailScore').textContent = q.attentionScore;
   $('#detailPrice').textContent = `$${q.price.toFixed(2)}`; $('#detailMove').textContent = `${q.pct >= 0 ? '+' : ''}${q.pct.toFixed(2)}%`;
-  $('#detailVolume').textContent = `${q.volume} · ${q.volumeMultiple}x`; $('#detailBeta').textContent = q.beta.toFixed(2);
+  $('#detailVolume').textContent = `${q.volume} - ${q.volumeMultiple}x`; $('#detailBeta').textContent = q.beta.toFixed(2);
+  const currentVolume = q.volumeValue || parseVolume(q.volume);
+  const averageVolume = q.averageVolume || currentVolume / (q.volumeMultiple || 1);
+  const volumeScale = Math.max(currentVolume, averageVolume, 1);
+  $('#currentVolumeBar').style.width = `${Math.max(8, currentVolume / volumeScale * 100)}%`;
+  $('#averageVolumeBar').style.width = `${Math.max(8, averageVolume / volumeScale * 100)}%`;
+  $('#currentVolumeLabel').textContent = q.volume;
+  $('#averageVolumeLabel').textContent = formatVolume(averageVolume);
+  $('#volumeMultiple').textContent = `${q.volumeMultiple.toFixed(1)}x average`;
+  $('#detailHeadline').textContent = q.headline || 'No recent headline available.';
   $('#detailReasons').innerHTML = q.reasons.map(reason => `<li>${escapeHtml(reason)}</li>`).join(''); $('#detailReview').dataset.symbol = symbol; $('#detailDialog').showModal();
 }
+function formatVolume(value) { return value >= 1000000 ? `${(value / 1000000).toFixed(1)}M` : `${(value / 1000).toFixed(1)}K`; }
+function parseVolume(value) { const match = String(value || '').match(/([\d.]+)\s*([MK])?/i); if (!match) return 0; const amount = Number(match[1]); return match[2]?.toUpperCase() === 'M' ? amount * 1000000 : match[2]?.toUpperCase() === 'K' ? amount * 1000 : amount; }
 async function load() { try { dashboard = await request('/api/dashboard'); render(); } catch (error) { showToast(error.message); } }
 async function checkAll() { try { dashboard = await request('/api/check', { method: 'POST' }); render(); showToast('Baseline updated. You are all caught up.'); } catch (error) { showToast(error.message); } }
 async function removeSymbol(symbol) { try { dashboard = await request(`/api/watchlist/${symbol}`, { method: 'DELETE' }); render(); showToast(`${symbol} removed from your watchlist.`); } catch (error) { showToast(error.message); } }

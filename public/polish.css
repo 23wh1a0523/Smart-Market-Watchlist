@@ -1,3 +1,4 @@
+.queue-panel{position:relative;overflow:hidden}.queue-panel:before{content:"";position:absolute;right:-28px;top:-45px;width:120px;height:120px;border:1px solid rgba(44,139,104,.16);border-radius:50%;box-shadow:0 0 0 12px rgba(44,139,104,.035),0 0 0 24px rgba(44,139,104,.025)}.quality-dot.is-live{background:#2c8b68;box-shadow:0 0 0 4px #d9f0e3}.quality-dot.is-simulated{background:#e6b74e;box-shadow:0 0 0 4px #fff3d3}
 /* Visual polish: a tactile change desk with stronger signal hierarchy. */
 body{background-color:#f3f6ef;background-image:linear-gradient(135deg,#f7f9f3 0%,#edf3e7 52%,#f5f7f1 100%)}
 .shell{position:relative}.topbar{position:relative;border-bottom:0}.topbar:after{display:none}

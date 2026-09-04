@@ -42,6 +42,10 @@ function render() {
   $('#changeBanner').style.display = dashboard.meaningful.length ? 'flex' : 'none';
   $('#marketStory').textContent = dashboard.marketStory;
   $('#dataAsOf').textContent = `As of ${new Date(dashboard.feed.asOf).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })} · ${dashboard.feed.sources.join(' + ')}`;
+    const isLive = dashboard.feed.status === 'live';
+    $('#dataStatus').textContent = isLive ? 'Live market data' : 'Simulated market data';
+    $('#qualityDot').className = `quality-dot ${isLive ? 'is-live' : 'is-simulated'}`;
+    $('#dataInfo').title = isLive ? 'Quotes are fetched from Finnhub.' : 'Add FINNHUB_API_KEY on the server to enable live quotes.';
   $('#queueCount').textContent = dashboard.attentionQueue.length;
   $('#attentionQueue').innerHTML = dashboard.attentionQueue.slice(0, 5).map((item, index) => {
     const quote = quotes.find(q => q.symbol === item.symbol);

@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Market Wishlist</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/public/styles.css">
+  <link rel="stylesheet" href="/public/polish.css">
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <a class="brand" href="/"><span class="brand-mark">S</span><span>Smart Market <span class="brand-light">Wishlist</span></span></a>
+      <div class="market-status"><span class="pulse"></span><span>Markets open</span><span class="dot-sep">·</span><span id="clock">--:--:--</span></div>
+      <button class="icon-button" id="refreshButton" title="Refresh market data" aria-label="Refresh market data">↻</button>
+    </header>
+
+    <main>
+      <section class="intro">
+        <div><h1>Smart Market<br><em>Watchlist</em></h1></div>
+        <div class="intro-side"><p id="lastChecked">First check today</p><button id="checkButton" class="primary-button"><span>✓</span> Mark all reviewed</button></div>
+      </section>
+
+      <section class="pulse-strip" aria-label="Market pulse">
+        <div class="pulse-label"><span class="spark-icon">⌁</span><span>Market pulse</span></div>
+        <div class="pulse-stat"><span>S&amp;P 500</span><strong class="positive" id="sp">+0.42%</strong></div>
+        <div class="pulse-stat"><span>Nasdaq</span><strong class="positive" id="nasdaq">+0.88%</strong></div>
+        <div class="pulse-stat"><span>VIX</span><strong id="vix">14.8</strong></div>
+        <div class="breadth"><span>Market breadth</span><div class="breadth-bar"><i id="breadthBar"></i></div><strong id="breadth">63%</strong></div>
+      </section>
+
+      <section class="change-banner" id="changeBanner"><div class="signal-ring">!</div><div><strong id="changeTitle">3 meaningful changes</strong><p>Compared with your last check. Prioritize these first.</p></div><button class="text-button" id="focusChanges">Focus changes <span>→</span></button></section>
+
+      <section class="briefing-grid" aria-label="While you were away briefing">
+        <article class="briefing-story">
+          <div class="section-kicker"><span class="story-mark">✦</span> Today's market story</div>
+          <p id="marketStory">Loading your market context...</p>
+          <div class="story-foot"><span id="storySubject">Attention is ranked by meaningful change.</span><span class="verified-pill">FACTS FIRST</span></div>
+        </article>
+        <article class="queue-panel">
+          <div class="section-kicker">Your attention queue <span class="queue-count" id="queueCount">0</span></div>
+          <div id="attentionQueue" class="queue-list"></div>
+        </article>
+      </section>
+
+      <section class="context-bar">
+        <div><span class="section-kicker">Compare with</span><div class="compare-toggle" role="group" aria-label="Comparison period"><button class="active" data-compare="last visit">Last visit</button><button data-compare="yesterday">Yesterday</button><button data-compare="1 week ago">1 week ago</button></div></div>
+        <div class="data-quality"><span class="quality-dot"></span><div><strong>Data delayed · 15 min</strong><span id="dataAsOf">Feed timestamp loading</span></div><button class="info-button" title="Market data is simulated for this prototype" aria-label="Data information">i</button></div>
+      </section>
+
+      <section class="toolbar"><div><h2>Your watchlist <span id="count">3</span></h2><p>Quotes delayed 15 min · Updated <span id="updated">just now</span></p></div><div class="toolbar-actions"><div class="watch-controls"><label class="search-box"><span>⌕</span><input id="searchInput" type="search" placeholder="Search symbols" aria-label="Search watchlist"></label><div class="filter-toggle" role="group" aria-label="Filter watchlist"><button class="active" data-filter="all">All</button><button data-filter="changed">Changed</button></div></div><div class="view-toggle"><button class="active" data-view="grid" title="Grid view" aria-label="Grid view">▦</button><button data-view="list" title="List view" aria-label="List view">☷</button></div><button class="add-button" id="addButton"><span>＋</span> Add symbol</button></div></section>
+      <section class="watchlist" id="watchlist"></section>
+
+    </main>
+  </div>
+
+  <dialog id="addDialog"><form method="dialog" id="addForm"><div class="dialog-head"><div><p class="eyebrow">Expand your radar</p><h2>Add to watchlist</h2></div><button class="close-button" value="cancel" aria-label="Close">×</button></div><label for="symbolSelect">Symbol</label><select id="symbolSelect"></select><label for="noteInput">Why are you watching it? <span>optional</span></label><input id="noteInput" maxlength="40" placeholder="e.g. Waiting for margin expansion"><div class="dialog-actions"><button class="secondary-button" value="cancel">Cancel</button><button class="primary-button" id="saveButton" value="default">Add symbol</button></div></form></dialog>
+  <dialog id="detailDialog"><div class="detail-panel"><div class="dialog-head"><div><p class="eyebrow">Signal breakdown</p><h2 id="detailTitle">NVDA</h2></div><button class="close-button" id="closeDetail" aria-label="Close">×</button></div><div class="detail-score"><div class="score-number" id="detailScore">--</div><div><strong>Attention score</strong><p>Higher means this stock deserves a closer look now.</p></div></div><div class="detail-grid"><div><span>Price</span><strong id="detailPrice">--</strong></div><div><span>Today</span><strong id="detailMove">--</strong></div><div><span>Volume</span><strong id="detailVolume">--</strong></div><div><span>Beta</span><strong id="detailBeta">--</strong></div></div><h3>Why it matters</h3><ul id="detailReasons"></ul><button class="primary-button" id="detailReview"><span>✓</span> Mark reviewed</button></div></dialog>
+  <div class="toast" id="toast" role="status"></div>
+  <script src="/public/app.js"></script>
+</body>
+</html>

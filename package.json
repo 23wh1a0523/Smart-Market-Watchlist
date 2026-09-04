@@ -1,0 +1,9 @@
+{
+  "name": "signal-watch",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A smart market watchlist focused on meaningful change.",
+  "scripts": {
+    "start": "python server.py"
+  }
+}

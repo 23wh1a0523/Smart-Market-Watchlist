@@ -1,0 +1,44 @@
+{
+  "symbols": [
+    {
+      "symbol": "NVDA",
+      "addedAt": "2026-09-04T05:50:35.383682+00:00",
+      "note": "AI infrastructure"
+    },
+    {
+      "symbol": "ASML",
+      "addedAt": "2026-09-04T05:50:35.383750+00:00",
+      "note": "Moat monitor"
+    },
+    {
+      "symbol": "AAPL",
+      "note": "Added to watchlist",
+      "addedAt": "2026-09-04T05:52:32.962167+00:00"
+    },
+    {
+      "symbol": "MSFT",
+      "note": "Added to watchlist",
+      "addedAt": "2026-09-04T16:54:25.219920+00:00"
+    },
+    {
+      "symbol": "AMD",
+      "note": "Added to watchlist",
+      "addedAt": "2026-09-04T17:17:04.521421+00:00"
+    }
+  ],
+  "lastCheck": "2026-09-04T16:03:14.382761+00:00",
+  "lastSnapshot": {
+    "NVDA": {
+      "price": 172.51,
+      "pct": -2.65
+    },
+    "ASML": {
+      "price": 733.26,
+      "pct": 2.04
+    },
+    "AAPL": {
+      "price": 242.28,
+      "pct": -0.34
+    }
+  }
+}
